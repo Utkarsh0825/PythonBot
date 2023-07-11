@@ -1,4 +1,5 @@
-import telebot
+python-telegram-bot==13.7
+
 from telebot import types
 
 bot = telebot.TeleBot("5932193364:AAEAbmlPWX1Vo6Rc4iE9sfj75AZkr0J8rMI")
