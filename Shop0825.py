@@ -1,0 +1,83 @@
+#5932193364:AAEAbmlPWX1Vo6Rc4iE9sfj75AZkr0J8rMI
+import telebot
+from telebot import types
+
+bot = telebot.TeleBot("5932193364:AAEAbmlPWX1Vo6Rc4iE9sfj75AZkr0J8rMI")
+
+items = {
+    "Apple": 2.5,
+    "Banana": 1.0,
+    "Orange": 1.5,
+    "Mango": 3.0,
+    "Carrot": 0.5,
+    "Potato": 0.75,
+    "Onion": 1.25,
+    "Tomato": 1.0,
+    "Cucumber": 0.75,
+    "Lettuce": 1.5
+}
+
+cart = {}
+
+
+@bot.message_handler(commands=['start'])
+def start(message):
+    keyboard = types.ReplyKeyboardMarkup(row_width=2)
+    for item in items:
+        button = types.KeyboardButton(item)
+        keyboard.add(button)
+    button = types.KeyboardButton("Go to cart")
+    keyboard.add(button)
+    bot.reply_to(message, "Welcome to the Grocery Store!\n\nSelect items from the list:", reply_markup=keyboard)
+
+
+@bot.message_handler(func=lambda message: message.text in items)
+def add_to_cart(message):
+    item_name = message.text
+    item_price = items[item_name]
+    if item_name in cart:
+        cart[item_name] += 1
+    else:
+        cart[item_name] = 1
+    bot.reply_to(message, f"Added {item_name} to your cart!\n\nYour cart: {cart}\n\nSelect items from the list:")
+
+
+@bot.message_handler(func=lambda message: message.text == "Go to cart")
+def show_cart(message):
+    if len(cart) == 0:
+        bot.reply_to(message, "Your cart is empty!")
+    else:
+        total_price = 0
+        cart_text = ""
+        for item_name in cart:
+            item_price = items[item_name]
+            item_quantity = cart[item_name]
+            total_item_price = item_price * item_quantity
+            total_price += total_item_price
+            cart_text += f"{item_name} x {item_quantity}: ${total_item_price:.2f}\n"
+        cart_text += f"\nTotal: ${total_price:.2f}"
+        keyboard = types.ReplyKeyboardMarkup(row_width=2)
+        button = types.KeyboardButton("Checkout")
+        keyboard.add(button)
+        bot.reply_to(message, f"Your cart:\n\n{cart_text}\n\nWould you like to checkout?", reply_markup=keyboard)
+
+
+@bot.message_handler(func=lambda message: message.text == "Checkout")
+def checkout(message):
+    if len(cart) == 0:
+        bot.reply_to(message, "Your cart is empty. Please add items to your cart first.")
+    else:
+        total_price = sum(items[item_name] * item_quantity for item_name, item_quantity in cart.items())
+        cart.clear()
+
+        # Create the pickup options using radio buttons
+        keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True, one_time_keyboard=True)
+        button_pickup = types.KeyboardButton("Pick up from store")
+        button_cod = types.KeyboardButton("Cash on delivery")
+        keyboard.add(button_pickup, button_cod)
+
+        bot.reply_to(message, f"Thank you for your order! Total amount due: ${total_price:.2f}. Please select a delivery option:",
+                     reply_markup=keyboard)
+
+
+bot.polling()
